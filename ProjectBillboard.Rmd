@@ -120,9 +120,127 @@ ggplot(billboard_test, aes(x = decade, fill = decade)) +
 ```
 
 ```{R}
-ggplot(billboard_test, aes(x = artist_place_of_origin)) +
-  geom_bar()
-billboard_test$artist_place_of_origin == "United States"
+# number of hits per year
+billboard_test %>%
+  mutate(year = as.numeric(year)) %>%
+  count(year) %>%
+  ggplot(aes(x = year, y = n)) +
+
+  geom_line(
+    color = "#4E79A7",
+    linewidth = 1.2
+  ) +
+
+  geom_point(
+    color = "#4E79A7",
+    size = 2
+  ) +
+
+  scale_x_continuous(
+    breaks = seq(1955, 2025, by = 5)
+  ) +
+
+  labs(
+    title = "Number of Billboard #1 Hits per Year",
+    subtitle = "Distribution of songs across years",
+    x = "Year",
+    y = "Number of hits"
+  ) +
+
+  theme_minimal(base_size = 13) +
+
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
+```{R}
+# Popularity of collab songs
+billboard_test %>%
+  mutate(year = as.numeric(year)) %>%
+  group_by(year) %>%
+  summarise(
+    collab_percent = mean(is_collab, na.rm = TRUE) * 100
+  ) %>%
+  ggplot(aes(x = year, y = collab_percent)) +
+  geom_line(color = "#4E79A7", linewidth = 1.2) +
+  geom_point(color = "#4E79A7", size = 2) +
+  theme_minimal(base_size = 13) +
+
+  labs(
+    title = "Popularity of Collaboration Songs Over Time",
+    subtitle = "Percentage of Billboard #1 songs that were collaborations",
+    x = "Year",
+    y = "% of collaboration songs"
+  )
+```
+```{R}
+ggplot(billboard_test, aes(x = song_title_length)) +
+  geom_histogram(
+    binwidth = 2,
+    fill = "#4E79A7",
+    color = "white",
+    alpha = 0.9
+  ) +
+  labs(
+    title = "Distribution of Song Title Lengths",
+    subtitle = "Most Billboard #1 songs have relatively short titles",
+    x = "Song title length (characters)",
+    y = "Number of songs"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+```{R}
+# Titles got slightly shorter over time
+ggplot(billboard_test,
+       aes(x = decade, y = song_title_length, fill = decade)) +
+  geom_boxplot()
+```
+
+```{R}
+# Top 10 artists with most hit songs
+billboard_test %>%
+  count(artist, sort = TRUE) %>%
+  slice_head(n = 10) %>%
+  ggplot(aes(x = reorder(artist, n), y = n)) +
+  geom_col(fill="#4E79A7") +
+  coord_flip() +
+  labs(title="Top 10 aritsts with most hit songs")
+```
+```{R}
+billboard_test %>%
+  count(decade, season) %>%
+
+  ggplot(aes(x = decade, y = season, fill = n)) +
+
+  geom_tile(color = "white", linewidth = 1) +
+
+  geom_text(
+    aes(label = n),
+    color = "white",
+    size = 5
+  ) +
+
+  scale_fill_gradient(
+    low = "#A8DADC",
+    high = "#1D3557"
+  ) +
+
+  labs(
+    title = "Billboard #1 Hits by Season and Decade",
+    subtitle = "Darker colors indicate more songs",
+    x = "Decade",
+    y = "Season",
+    fill = "Songs"
+  ) +
+
+  theme_minimal(base_size = 13) +
+
+  theme(
+    panel.grid = element_blank(),
+    axis.text.x = element_text(face = "bold"),
+    axis.text.y = element_text(face = "bold")
+  )
 ```
 
 
