@@ -28,7 +28,9 @@ library(janitor)
 # 1. Data Cleaning and Preparation
 
 ```{r}
-billboard_raw <- read.csv("billboard.csv")
+tuesdata <- tidytuesdayR::tt_load('2025-08-26')
+
+billboard_raw <- tuesdata$billboard 
 ```
 
 Let's have a look on our data.
@@ -56,31 +58,27 @@ billboard_clean <- billboard_raw %>%
     across(where(is.character), str_squish)
   ) %>%
   mutate(
-    date = lubridate::dmy(date)
+    date = lubridate::ymd(date)
   ) %>%
   drop_na(artist, song, date) %>%
   distinct()
   
 colSums(is.na(billboard_clean))
-
-head(billboard_clean)
 ```
 
 ```{R}
 # a few new columns
 billboard_test <- billboard_clean
-head(billboard_test)
 
 billboard_test <- billboard_test %>% mutate(decade = paste0(floor(year(date) / 10) * 10 , "s"))
 billboard_test <- billboard_test %>% mutate(year = paste0(floor(year(date))))
+# First two allow for better analysis of the time of release
+billboard_test <- billboard_test %>% mutate(is_collab = str_detect(artist, "feat\\.|&|,|and"))
+billboard_test <- billboard_test %>% mutate(artist_count = str_count(artist, "&|,|feat\\.") + 1)
+# These two make it easier to see if songs performed by multiple people are more popular
+billboard_test <- billboard_test %>% mutate(song_title_length = nchar(song))
+# This one can be used to see if longer song titles may lead to lower popularity
 
-
-
-```
-
-## This allows us to see in what season does the most hit songs get produced
-
-```{R}
 billboard_test <- billboard_test %>%
   mutate(
   season = case_when(
@@ -90,31 +88,108 @@ billboard_test <- billboard_test %>%
     TRUE ~ "Autumn"
   )
 )
-
+## This allows us to see in what season does the most hit songs get produced
 billboard_test %>% count(season)
+
+
+
+
+```
+```{R}
+# Statistics about length of the song title
+max(billboard_test$song_title_length)
+min(billboard_test$song_title_length)
+mean(billboard_test$song_title_length)
+
+#We can see that there are longer song titles (max == 66) but they tend to be much shorter (mean == 16) [characters long]
 ```
 
-## we can now make a chart that highliths that comparison.
+## Charts
 
 ```{R}
-head(billboard_test)
-
+#This chart shows us that it doesn't matter when the song was released season wise
 ggplot(billboard_test, aes(x = season, fill = season)) +
   geom_bar()
 
 ```
 
 ```{R}
+#This one shows that most popular songs were written in the 70s and 80s
 ggplot(billboard_test, aes(x = decade, fill = decade)) +
   geom_bar()
 ```
 
 ```{R}
-(sum(billboard_test["artist_is_only_songwriter"]) / count(billboard_test["artist_is_only_songwriter"])) * 100
+ggplot(billboard_test, aes(x = artist_place_of_origin)) +
+  geom_bar()
+billboard_test$artist_place_of_origin == "United States"
 ```
 
-### This precent of Artist wrote the songs themselves
+
+## Interesting statistics
 
 ```{R}
-(count(billboard_test["artist_is_songwriter"]) - sum(billboard_test["artist_is_songwriter"])
+(sum(billboard_test["artist_is_only_songwriter"]) / count(billboard_test["artist_is_only_songwriter"])) * 100
+### This percent of Artist wrote the songs themselves
 ```
+
+
+
+```{R}
+(count(billboard_test["artist_is_a_songwriter"]) - sum(billboard_test["artist_is_a_songwriter"]))/count(billboard_test["artist_is_a_songwriter"]) *100
+
+### This percent of artist haven't even contributed to the writing process
+```
+
+```{R}
+sum(billboard_test$is_collab) / count(billboard_test) * 100
+# percentage of songs that are collabs
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
