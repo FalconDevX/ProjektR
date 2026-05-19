@@ -28,9 +28,7 @@ library(janitor)
 # 1. Data Cleaning and Preparation
 
 ```{r}
-tuesdata <- tidytuesdayR::tt_load('2025-08-26')
-
-billboard_raw <- tuesdata$billboard 
+billboard_raw <- read.csv("billboard.csv")
 ```
 
 Let's have a look on our data.
@@ -58,17 +56,20 @@ billboard_clean <- billboard_raw %>%
     across(where(is.character), str_squish)
   ) %>%
   mutate(
-    date = lubridate::ymd(date)
+    date = lubridate::dmy(date)
   ) %>%
   drop_na(artist, song, date) %>%
   distinct()
   
 colSums(is.na(billboard_clean))
+
+head(billboard_clean)
 ```
 
 ```{R}
 # a few new columns
 billboard_test <- billboard_clean
+head(billboard_test)
 
 billboard_test <- billboard_test %>% mutate(decade = paste0(floor(year(date) / 10) * 10 , "s"))
 billboard_test <- billboard_test %>% mutate(year = paste0(floor(year(date))))
@@ -76,8 +77,6 @@ billboard_test <- billboard_test %>% mutate(year = paste0(floor(year(date))))
 
 
 ```
-
-
 
 ## This allows us to see in what season does the most hit songs get produced
 
@@ -94,9 +93,12 @@ billboard_test <- billboard_test %>%
 
 billboard_test %>% count(season)
 ```
+
 ## we can now make a chart that highliths that comparison.
 
 ```{R}
+head(billboard_test)
+
 ggplot(billboard_test, aes(x = season, fill = season)) +
   geom_bar()
 
