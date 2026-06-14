@@ -66,8 +66,10 @@ billboard_clean <- billboard_raw %>%
 colSums(is.na(billboard_clean))
 ```
 
+## 1.3 Preparation of new columns
+Ten new columns for extra insight.
+
 ```{R}
-# a few new columns
 billboard_test <- billboard_clean
 
 billboard_test <- billboard_test %>% mutate(decade = paste0(floor(year(date) / 10) * 10 , "s"))
@@ -91,30 +93,69 @@ billboard_test <- billboard_test %>%
 ## This allows us to see in what season does the most hit songs get produced
 billboard_test %>% count(season)
 
-
-
-
+billboard_test <- billboard_test %>% 
+  mutate(
+    is_solo = if_else(artist_count == 1, TRUE, FALSE),
+    
+    month = month(date, label = TRUE),
+    
+    artist_name_length = nchar(artist),
+    
+    title_word_count = str_count(song, " ") + 1
+  )
 ```
+
+Let's out set after changes.
+```{r}
+glimpse(billboard_test)
+```
+
+# 2. Exploratory Data Analysis
+
+## 2.1 Interesting statistics
+
+Length of the song title. We can see that there are longer song titles
+(max == 66) but they tend to be much shorter (mean == 16) [characters
+long]
+
 ```{R}
-# Statistics about length of the song title
 max(billboard_test$song_title_length)
 min(billboard_test$song_title_length)
 mean(billboard_test$song_title_length)
-
-#We can see that there are longer song titles (max == 66) but they tend to be much shorter (mean == 16) [characters long]
 ```
 
-## Charts
+Percent of Artist whom wrote the songs only themselves.
 
 ```{R}
-#This chart shows us that it doesn't matter when the song was released season wise
+(sum(billboard_test["artist_is_only_songwriter"]) / count(billboard_test["artist_is_only_songwriter"])) * 100
+```
+
+And on the other hand, percent of artist whom haven't even contributed
+to the writing process.
+
+```{R}
+(count(billboard_test["artist_is_a_songwriter"]) - sum(billboard_test["artist_is_a_songwriter"]))/count(billboard_test["artist_is_a_songwriter"]) *100
+```
+
+Percentage of songs that are collabs.
+
+```{R}
+sum(billboard_test$is_collab) / count(billboard_test) * 100
+```
+
+## 2.2 Data visualization
+
+This chart shows us that it doesn't matter when the song was released
+season wise
+
+```{R}
 ggplot(billboard_test, aes(x = season, fill = season)) +
   geom_bar()
 
 ```
 
+This one shows that most popular songs were written in the 70s and 80s. Or they last shorter on no. 1 position.
 ```{R}
-#This one shows that most popular songs were written in the 70s and 80s
 ggplot(billboard_test, aes(x = decade, fill = decade)) +
   geom_bar()
 ```
@@ -153,6 +194,7 @@ billboard_test %>%
     axis.text.x = element_text(angle = 45, hjust = 1)
   )
 ```
+
 ```{R}
 # Popularity of collab songs
 billboard_test %>%
@@ -173,6 +215,7 @@ billboard_test %>%
     y = "% of collaboration songs"
   )
 ```
+
 ```{R}
 ggplot(billboard_test, aes(x = song_title_length)) +
   geom_histogram(
@@ -207,6 +250,7 @@ billboard_test %>%
   coord_flip() +
   labs(title="Top 10 aritsts with most hit songs")
 ```
+
 ```{R}
 billboard_test %>%
   count(decade, season) %>%
@@ -242,72 +286,46 @@ billboard_test %>%
     axis.text.y = element_text(face = "bold")
   )
 ```
-
-
-## Interesting statistics
-
 ```{R}
-(sum(billboard_test["artist_is_only_songwriter"]) / count(billboard_test["artist_is_only_songwriter"])) * 100
-### This percent of Artist wrote the songs themselves
+ggplot(billboard_test, aes(x = decade, y = title_word_count, fill = decade)) +
+  geom_boxplot(alpha = 0.7) +
+  labs(
+    title = "Word Count in Song Titles by Decade",
+    x = "Decade",
+    y = "Number of words in title"
+  ) +
+  theme_minimal()
 ```
 
-
-
-```{R}
-(count(billboard_test["artist_is_a_songwriter"]) - sum(billboard_test["artist_is_a_songwriter"]))/count(billboard_test["artist_is_a_songwriter"]) *100
-
-### This percent of artist haven't even contributed to the writing process
-```
+Solo vs colab
 
 ```{R}
-sum(billboard_test$is_collab) / count(billboard_test) * 100
-# percentage of songs that are collabs
+billboard_test %>%
+  count(is_solo) %>%
+  ggplot(aes(x = is_solo, y = n, fill = is_solo)) +
+  geom_col() +
+  labs(
+    title = "Solo Artists vs Collaborations (#1 Hits)",
+    x = "Is it a solo artist?",
+    y = "Number of songs"
+  ) +
+  theme_minimal()
 ```
 
+# 3. Modeling
 
+## 3.1 Research Question and Hypothesis
 
+## 3.2 Model 1: [np. Logistic Regression]
 
+## 3.3 Model 2: [np. Decision Tree / KNN / inny z zajęć]
 
+## 3.4 Model Evaluation and Comparison
 
+# 4. Summary and Reflection
 
+## 4.1 Project Summary and Key Findings
 
+## 4.2 Limitations
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+## 4.3 Reflection
