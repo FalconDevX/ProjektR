@@ -312,15 +312,221 @@ billboard_test %>%
   theme_minimal()
 ```
 
+
+## 2.3 Data visualization for model
+
+```{r}
+billboard_test %>%
+  group_by(decade) %>%
+  summarize(pct_black = mean(artist_black, na.rm = TRUE) * 100) %>%
+  ggplot(aes(x = decade, y = pct_black, group = 1)) +
+  geom_line(color = "#E15759", linewidth = 1.2) +
+  geom_point(color = "#E15759", size = 3) +
+  labs(
+    title = "Percentage of #1 Hits by Black Artists Over Time",
+    x = "Decade",
+    y = "% of Hits by Black Artists"
+  ) +
+  theme_minimal()
+```
+
+Filter to keep only clear Male (1) or Female (2) solo artists.
+```{R}
+billboard_test %>%
+  filter(artist_male %in% c(1, 2)) %>%
+  mutate(Gender = ifelse(artist_male == 1, "Male", "Female")) %>%
+  ggplot(aes(x = Gender, y = danceability, fill = Gender)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = c("#F28E2B", "#4E79A7")) +
+  labs(
+    title = "Song Danceability: Male vs Female Artists",
+    x = "Artist Gender",
+    y = "Danceability Score"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+billboard_test %>%
+  # Wybieramy tylko solowych artystów (1 = Mężczyzna, 2 = Kobieta)
+  filter(artist_male %in% c(1, 2)) %>%
+  mutate(Gender = ifelse(artist_male == 1, "Male", "Female")) %>%
+  count(decade, Gender) %>%
+  ggplot(aes(x = decade, y = n, color = Gender, group = Gender)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 3) +
+  scale_color_manual(values = c("Male" = "#4E79A7", "Female" = "#F28E2B")) +
+  labs(
+    title = "Number of #1 Hits: Male vs Female Artists Over Time",
+    x = "Decade",
+    y = "Number of Hit Songs",
+    color = "Artist Gender"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
+
+```{r}
+billboard_test %>%
+  mutate(Race = ifelse(artist_black == 1, "Black Artists", "Other Artists")) %>%
+  ggplot(aes(x = Race, y = danceability, fill = Race)) +
+  geom_boxplot(alpha = 0.8, color = "darkgray") +
+  scale_fill_manual(values = c("#E15759", "#76B7B2")) +
+  labs(
+    title = "Song Danceability by Artist Race",
+    x = "Artist Demographic",
+    y = "Danceability Score"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "none")
+```
+
+```{r}
+billboard_test %>%
+  # Filter only clear Male (1) or Female (2) solo artists
+  filter(artist_male %in% c(1, 2)) %>%
+  mutate(Gender = ifelse(artist_male == 1, "Male", "Female")) %>%
+  ggplot(aes(x = acousticness, fill = Gender)) +
+  geom_density(alpha = 0.6) +
+  scale_fill_manual(values = c("Male" = "#4E79A7", "Female" = "#F28E2B")) +
+  labs(
+    title = "Acousticness of #1 Hits: Male vs Female Artists",
+    x = "Acousticness Score (0 = Electronic/Produced, 100 = Acoustic)",
+    y = "Density",
+    fill = "Artist Gender"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
 # 3. Modeling
+```{r include=FALSE}
+library(tidymodels)
+library(kknn)
+
+model_data <- billboard_test %>%
+  mutate(
+    year_num = as.numeric(year),
+    is_black = factor(ifelse(artist_black == 1, "yes", "no"), levels = c("yes", "no"))
+  ) %>%
+  drop_na(year_num, danceability, energy, acousticness, is_black)
+
+set.seed(67) 
+data_split <- initial_split(model_data, prop = 0.75, strata = is_black)
+train_data <- training(data_split)
+test_data  <- testing(data_split)
+
+cv_folds <- vfold_cv(train_data, v = 5, strata = is_black)
+```
 
 ## 3.1 Research Question and Hypothesis
 
-## 3.2 Model 1: [np. Logistic Regression]
+Can we predict the demographic profile (gender and race) of a no.1 hit artist based on the song's audio features (danceability, acousticness, energy) and the year of release? If a song becomes a hit today, what kind of artist is most likely behind it?
 
-## 3.3 Model 2: [np. Decision Tree / KNN / inny z zajęć]
+Hypothesis: Based on our Exploratory Data Analysis, we hypothesize that highly danceable songs released in more recent decades are strongly associated with Black artists, due to the rise of R&B and Hip-Hop genres.
+
+Let's also remember about normalization for knn.
+```{r}
+knn_recipe <- recipe(is_black ~ year_num + danceability + energy + acousticness, data = train_data) %>%
+  step_normalize(all_numeric_predictors())
+```
+
+## 3.2 KNN
+
+```{R}
+knn_spec <- nearest_neighbor(neighbors = tune()) %>%
+  set_engine("kknn") %>%
+  set_mode("classification")
+
+knn_wf <- workflow() %>%
+  add_recipe(knn_recipe) %>%
+  add_model(knn_spec)
+
+k_grid <- tibble(neighbors = c(5, 10, 20, 30, 50, 75, 100))
+
+set.seed(314)
+knn_tuning <- tune_grid(
+  knn_wf,
+  resamples = cv_folds,
+  grid = k_grid,
+  metrics = metric_set(roc_auc, accuracy)
+)
+
+autoplot(knn_tuning) +
+  labs(title = "KNN Tuning: Performance vs. Number of Neighbors (k)",
+       subtitle = "Finding the optimal 'k' using 5-fold cross-validation") +
+  theme_light()
+```
+
+```{R}
+best_k <- select_best(knn_tuning, metric = "roc_auc")
+
+final_knn_wf <- finalize_workflow(knn_wf, best_k)
+knn_last_fit <- last_fit(final_knn_wf, split = data_split)
+
+
+knn_metrics <- collect_metrics(knn_last_fit)
+knn_metrics
+```
+
+## 3.3 Logistic Regression
+```{R}
+log_spec <- logistic_reg() %>% set_engine("glm")
+log_wf <- workflow() %>% add_recipe(knn_recipe) %>% add_model(log_spec)
+
+log_last_fit <- last_fit(log_wf, split = data_split)
+
+fitted_log <- fit(log_wf, data = train_data)
+tidy(fitted_log)
+```
 
 ## 3.4 Model Evaluation and Comparison
+
+```{R}
+knn_predictions <- collect_predictions(knn_last_fit)
+
+conf_mat_obj <- conf_mat(knn_predictions, truth = is_black, estimate = .pred_class)
+autoplot(conf_mat_obj, type = "heatmap") +
+  labs(title = "KNN Confusion Matrix (Test Data)")
+```
+```{R}
+roc_obj <- roc_curve(knn_predictions, truth = is_black, .pred_yes)
+autoplot(roc_obj) +
+  labs(title = "KNN ROC Curve",
+       subtitle = paste("Test Set AUC =", round(knn_metrics$.estimate[2], 3))) +
+  theme_light()
+```
+
+```{r}
+knn_preds <- collect_predictions(knn_last_fit) %>% mutate(model = "KNN")
+log_preds <- collect_predictions(log_last_fit) %>% mutate(model = "Logistic Regression")
+
+combined_preds <- bind_rows(knn_preds, log_preds)
+
+combined_preds %>%
+  group_by(model) %>%
+  roc_curve(truth = is_black, .pred_yes) %>%
+  autoplot() +
+  labs(
+    title = "ROC Curve Comparison: KNN vs Logistic Regression",
+    subtitle = "Comparing the predictive power of both models",
+    color = "Model"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "bottom")
+
+knn_metrics <- collect_metrics(knn_last_fit) %>% mutate(model = "KNN")
+log_metrics <- collect_metrics(log_last_fit) %>% mutate(model = "Logistic Regression")
+
+bind_rows(knn_metrics, log_metrics) %>%
+  select(model, .metric, .estimate) %>%
+  filter(.metric %in% c("accuracy", "roc_auc")) %>%
+  pivot_wider(names_from = .metric, values_from = .estimate) %>%
+  rename(Model = model, Accuracy = accuracy, `ROC AUC` = roc_auc) %>%
+  knitr::kable(digits = 3, caption = "Performance Metrics on Test Data")
+```
 
 # 4. Summary and Reflection
 
