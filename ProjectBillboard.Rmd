@@ -67,6 +67,7 @@ colSums(is.na(billboard_clean))
 ```
 
 ## 1.3 Preparation of new columns
+
 Ten new columns for extra insight.
 
 ```{R}
@@ -106,8 +107,10 @@ billboard_test <- billboard_test %>%
 ```
 
 Let's out set after changes.
+
 ```{r}
-glimpse(billboard_test)
+
+names(billboard_test)
 ```
 
 # 2. Exploratory Data Analysis
@@ -124,24 +127,25 @@ min(billboard_test$song_title_length)
 mean(billboard_test$song_title_length)
 ```
 
-Percent of artists who wrote the songs only themselves. `artist_is_only_songwriter`
-is a 0/1 dummy, so its mean (times 100) is directly the percentage. We use
-`na.rm = TRUE` to skip songs with missing credits.
+Percent of artists who wrote the songs only themselves.
+`artist_is_only_songwriter` is a 0/1 dummy, so its mean (times 100) is
+directly the percentage. We use `na.rm = TRUE` to skip songs with
+missing credits.
 
 ```{R}
 mean(billboard_test$artist_is_only_songwriter, na.rm = TRUE) * 100
 ```
 
 And on the other hand, percent of artists who haven't even contributed
-to the writing process — i.e. where `artist_is_a_songwriter == 0`, which is
-`1` minus the mean of that dummy.
+to the writing process — i.e. where `artist_is_a_songwriter == 0`, which
+is `1` minus the mean of that dummy.
 
 ```{R}
 (1 - mean(billboard_test$artist_is_a_songwriter, na.rm = TRUE)) * 100
 ```
 
-Percentage of songs that are collabs. `is_collab` is logical, so its mean
-(times 100) gives the share of collaborations.
+Percentage of songs that are collabs. `is_collab` is logical, so its
+mean (times 100) gives the share of collaborations.
 
 ```{R}
 mean(billboard_test$is_collab, na.rm = TRUE) * 100
@@ -149,14 +153,13 @@ mean(billboard_test$is_collab, na.rm = TRUE) * 100
 
 ## 2.2 Data visualization
 
-**Number of #1 hits by season.**
-*Why:* we created the `season` variable and wanted to check whether
-hits cluster in any particular part of the year (e.g. summer hits).
-*What it shows:* the bars are almost the same height across all four
-seasons. *How it helps:* it tells us that the season of release is **not**
-an important factor for reaching #1 — songs become number one roughly
-evenly throughout the year, so we can drop seasonality as a serious
-predictor.
+**Number of #1 hits by season.** *Why:* we created the `season` variable
+and wanted to check whether hits cluster in any particular part of the
+year (e.g. summer hits). *What it shows:* the bars are almost the same
+height across all four seasons. *How it helps:* it tells us that the
+season of release is **not** an important factor for reaching #1 — songs
+become number one roughly evenly throughout the year, so we can drop
+seasonality as a serious predictor.
 
 ```{R}
 ggplot(billboard_test, aes(x = season, fill = season)) +
@@ -164,28 +167,27 @@ ggplot(billboard_test, aes(x = season, fill = season)) +
 
 ```
 
-**Number of #1 hits by decade.**
-*Why:* using the recoded `decade` variable we wanted to see how the
-number of #1 songs is distributed over time. *What it shows:* the 1970s
-and 1980s have the most number-one songs. *How it helps:* a higher count
-in a decade most likely means that songs spent **fewer weeks** at the top
-back then (more songs rotated through #1), which is an important clue
-about how the chart behaved historically and a reminder that raw counts
-per decade also depend on how long the dataset covers each decade.
+**Number of #1 hits by decade.** *Why:* using the recoded `decade`
+variable we wanted to see how the number of #1 songs is distributed over
+time. *What it shows:* the 1970s and 1980s have the most number-one
+songs. *How it helps:* a higher count in a decade most likely means that
+songs spent **fewer weeks** at the top back then (more songs rotated
+through #1), which is an important clue about how the chart behaved
+historically and a reminder that raw counts per decade also depend on
+how long the dataset covers each decade.
 
 ```{R}
 ggplot(billboard_test, aes(x = decade, fill = decade)) +
   geom_bar()
 ```
 
-**Number of #1 hits per year.**
-*Why:* the decade bar chart was too coarse, so we used the `year`
-variable to look at the same trend year by year. *What it shows:* the
-number of new #1 songs per year was high in the 1960s–1980s and then
-clearly drops from the 1990s onward. *How it helps:* it confirms (at a
-finer resolution) that hits started staying longer at the top in recent
-years, so fewer distinct songs reach #1 — a key trend for the rest of the
-analysis.
+**Number of #1 hits per year.** *Why:* the decade bar chart was too
+coarse, so we used the `year` variable to look at the same trend year by
+year. *What it shows:* the number of new #1 songs per year was high in
+the 1960s–1980s and then clearly drops from the 1990s onward. *How it
+helps:* it confirms (at a finer resolution) that hits started staying
+longer at the top in recent years, so fewer distinct songs reach #1 — a
+key trend for the rest of the analysis.
 
 ```{R}
 # number of hits per year
@@ -222,14 +224,13 @@ billboard_test %>%
   )
 ```
 
-**Share of collaborations over time.**
-*Why:* we built `is_collab` and wanted to know whether collaborations
-("feat.", "&", multiple artists) became more common among #1 hits.
-*What it shows:* the percentage of collaboration songs is low and noisy in
-the early decades but trends clearly upward toward recent years. *How it
-helps:* it reveals a real cultural shift — modern #1 hits are far more
-often joint efforts — which motivates using collaboration/artist features
-later on.
+**Share of collaborations over time.** *Why:* we built `is_collab` and
+wanted to know whether collaborations ("feat.", "&", multiple artists)
+became more common among #1 hits. *What it shows:* the percentage of
+collaboration songs is low and noisy in the early decades but trends
+clearly upward toward recent years. *How it helps:* it reveals a real
+cultural shift - modern #1 hits are far more often joint efforts - which
+motivates using collaboration/artist features later on.
 
 ```{R}
 # Popularity of collab songs
@@ -252,13 +253,13 @@ billboard_test %>%
   )
 ```
 
-**Distribution of song title lengths.**
-*Why:* we created `song_title_length` and wanted to see its overall
-distribution. *What it shows:* the histogram is right-skewed — most titles
-are short (around 10–20 characters) with a long thin tail of unusually
-long titles. *How it helps:* it justifies treating title length as a
-continuous variable with a typical "short title" range, and shows that
-extreme values are rare outliers rather than the norm.
+**Distribution of song title lengths.** *Why:* we created
+`song_title_length` and wanted to see its overall distribution. *What it
+shows:* the histogram is right-skewed — most titles are short (around
+10–20 characters) with a long thin tail of unusually long titles. *How
+it helps:* it justifies treating title length as a continuous variable
+with a typical "short title" range, and shows that extreme values are
+rare outliers rather than the norm.
 
 ```{R}
 ggplot(billboard_test, aes(x = song_title_length)) +
@@ -277,14 +278,14 @@ ggplot(billboard_test, aes(x = song_title_length)) +
   theme_minimal(base_size = 13)
 ```
 
-**Title length by decade.**
-*Why:* after seeing the overall distribution we wanted to know whether
-title length changed over time, so we crossed `song_title_length` with
-`decade`. *What it shows:* the medians (the line in each box) stay fairly
-stable, with only a slight tendency for titles to get a little shorter in
-recent decades, while the spread/outliers vary. *How it helps:* it tells
-us title length is reasonably stable over time and not strongly driven by
-era, so it can be used as a "neutral" descriptive feature.
+**Title length by decade.** *Why:* after seeing the overall distribution
+we wanted to know whether title length changed over time, so we crossed
+`song_title_length` with `decade`. *What it shows:* the medians (the
+line in each box) stay fairly stable, with only a slight tendency for
+titles to get a little shorter in recent decades, while the
+spread/outliers vary. *How it helps:* it tells us title length is
+reasonably stable over time and not strongly driven by era, so it can be
+used as a "neutral" descriptive feature.
 
 ```{R}
 # Titles got slightly shorter over time
@@ -293,13 +294,13 @@ ggplot(billboard_test,
   geom_boxplot()
 ```
 
-**Top 10 artists by number of #1 hits.**
-*Why:* we wanted to identify the most successful artists in the dataset.
-*What it shows:* a ranking of the ten artists with the most number-one
-songs (horizontal bars make the long artist names readable). *How it
-helps:* it gives concrete context to the data — we can see which artists
-dominate the chart and recognise familiar names, which sanity-checks that
-the dataset really is the Billboard #1 list.
+**Top 10 artists by number of #1 hits.** *Why:* we wanted to identify
+the most successful artists in the dataset. *What it shows:* a ranking
+of the ten artists with the most number-one songs (horizontal bars make
+the long artist names readable). *How it helps:* it gives concrete
+context to the data — we can see which artists dominate the chart and
+recognise familiar names, which sanity-checks that the dataset really is
+the Billboard #1 list.
 
 ```{R}
 # Top 10 artists with most hit songs
@@ -312,14 +313,14 @@ billboard_test %>%
   labs(title="Top 10 aritsts with most hit songs")
 ```
 
-**Heatmap of hits by season and decade.**
-*Why:* we combined our two recoded time variables (`decade` and `season`)
-to check for any joint pattern that the separate bar charts might hide.
-*What it shows:* the colour (and printed count) of each tile is driven
-mainly by the decade, while seasons within a decade look similar. *How it
-helps:* it confirms the two earlier findings at once — decades differ a
-lot but seasons do not — and shows there is no special "decade × season"
-interaction worth modelling.
+**Heatmap of hits by season and decade.** *Why:* we combined our two
+recoded time variables (`decade` and `season`) to check for any joint
+pattern that the separate bar charts might hide. *What it shows:* the
+colour (and printed count) of each tile is driven mainly by the decade,
+while seasons within a decade look similar. *How it helps:* it confirms
+the two earlier findings at once — decades differ a lot but seasons do
+not — and shows there is no special "decade × season" interaction worth
+modelling.
 
 ```{R}
 billboard_test %>%
@@ -356,13 +357,14 @@ billboard_test %>%
     axis.text.y = element_text(face = "bold")
   )
 ```
-**Word count in titles by decade.**
-*Why:* besides character length we created `title_word_count` and wanted
-to see whether titles became wordier or more concise over time. *What it
-shows:* most titles consistently have only a few words (roughly 2–4)
-across every decade, with a handful of long outliers. *How it helps:* it
-complements the character-length boxplot and reinforces that song titles
-are short and stable, regardless of era.
+
+**Word count in titles by decade.** *Why:* besides character length we
+created `title_word_count` and wanted to see whether titles became
+wordier or more concise over time. *What it shows:* most titles
+consistently have only a few words (roughly 2–4) across every decade,
+with a handful of long outliers. *How it helps:* it complements the
+character-length boxplot and reinforces that song titles are short and
+stable, regardless of era.
 
 ```{R}
 ggplot(billboard_test, aes(x = decade, y = title_word_count, fill = decade)) +
@@ -375,14 +377,14 @@ ggplot(billboard_test, aes(x = decade, y = title_word_count, fill = decade)) +
   theme_minimal()
 ```
 
-**Solo artists vs collaborations.**
-*Why:* using `is_solo` we wanted the overall split between solo acts and
-collaborations across the whole dataset (the time trend was shown
-earlier). *What it shows:* solo artists account for the clear majority of
-all #1 hits in the dataset. *How it helps:* it gives the baseline rate of
-collaborations — they are still the minority overall, even though their
-share is growing over time — which is useful context before any modelling
-that involves artist count.
+**Solo artists vs collaborations.** *Why:* using `is_solo` we wanted the
+overall split between solo acts and collaborations across the whole
+dataset (the time trend was shown earlier). *What it shows:* solo
+artists account for the clear majority of all #1 hits in the dataset.
+*How it helps:* it gives the baseline rate of collaborations — they are
+still the minority overall, even though their share is growing over time
+— which is useful context before any modelling that involves artist
+count.
 
 ```{R}
 billboard_test %>%
@@ -397,19 +399,19 @@ billboard_test %>%
   theme_minimal()
 ```
 
-
 ## 2.3 Data visualization for model
 
-The plots below explore the demographic and audio variables (`artist_black`,
-`artist_male`, `danceability`, `acousticness`) that we later use as inputs
-and target in the modeling section. Their goal is to check, visually,
-whether these variables carry any signal worth modelling.
+The plots below explore the demographic and audio variables
+(`artist_black`, `artist_male`, `danceability`, `acousticness`) that we
+later use as inputs and target in the modeling section. Their goal is to
+check, visually, whether these variables carry any signal worth
+modelling.
 
-**Share of #1 hits by Black artists over time.**
-*Why:* our research hypothesis links Black artists to recent decades, so
-we plot `artist_black` by `decade`. *What it shows:* the percentage of #1
-hits by Black artists rises markedly across the decades. *How it helps:*
-it provides the first direct evidence for our hypothesis and suggests that
+**Share of #1 hits by Black artists over time.** *Why:* our research
+hypothesis links Black artists to recent decades, so we plot
+`artist_black` by `decade`. *What it shows:* the percentage of #1 hits
+by Black artists rises markedly across the decades. *How it helps:* it
+provides the first direct evidence for our hypothesis and suggests that
 `decade`/`year` should be a useful predictor of the artist's demographic
 profile.
 
@@ -428,16 +430,15 @@ billboard_test %>%
   theme_minimal()
 ```
 
-**Danceability: male vs female artists.**
-*Why:* we want to know whether audio features differ by artist gender,
-which would make `danceability` useful for predicting demographics. We
-first filter to keep only clear Male (1) or Female (2) solo artists.
-*What it shows:* the two boxplots compare the distribution of
-`danceability` scores by gender; differences in the medians/spread
-indicate whether gender and danceability are related. *How it helps:* if
-the boxes overlap heavily, danceability alone barely separates genders; if
-they differ, it is a candidate predictor — either way it informs feature
-selection.
+**Danceability: male vs female artists.** *Why:* we want to know whether
+audio features differ by artist gender, which would make `danceability`
+useful for predicting demographics. We first filter to keep only clear
+Male (1) or Female (2) solo artists. *What it shows:* the two boxplots
+compare the distribution of `danceability` scores by gender; differences
+in the medians/spread indicate whether gender and danceability are
+related. *How it helps:* if the boxes overlap heavily, danceability
+alone barely separates genders; if they differ, it is a candidate
+predictor — either way it informs feature selection.
 
 ```{R}
 billboard_test %>%
@@ -455,14 +456,14 @@ billboard_test %>%
   theme(legend.position = "none")
 ```
 
-**Number of #1 hits by gender over time.**
-*Why:* beyond audio features we want to see how the gender balance of #1
-artists evolved, combining `artist_male` with `decade`. *What it shows:*
-two lines (male vs female) tracking the count of #1 hits per decade,
-revealing whether the gap between them narrows or widens. *How it helps:*
-it adds a demographic-trend dimension to the analysis and shows whether
-gender representation among #1 artists shifts over time, complementing the
-race trend above.
+**Number of #1 hits by gender over time.** *Why:* beyond audio features
+we want to see how the gender balance of #1 artists evolved, combining
+`artist_male` with `decade`. *What it shows:* two lines (male vs female)
+tracking the count of #1 hits per decade, revealing whether the gap
+between them narrows or widens. *How it helps:* it adds a
+demographic-trend dimension to the analysis and shows whether gender
+representation among #1 artists shifts over time, complementing the race
+trend above.
 
 ```{r}
 billboard_test %>%
@@ -486,14 +487,13 @@ billboard_test %>%
   )
 ```
 
-**Danceability by artist race.**
-*Why:* our hypothesis is that highly danceable songs are associated with
-Black artists, so we compare `danceability` between Black and other
-artists. *What it shows:* if the box for Black artists sits higher than
-for other artists, their #1 songs tend to be more danceable. *How it
-helps:* this is the most direct visual test of our hypothesis and a strong
-indicator that `danceability` should help the classifier separate
-`is_black`.
+**Danceability by artist race.** *Why:* our hypothesis is that highly
+danceable songs are associated with Black artists, so we compare
+`danceability` between Black and other artists. *What it shows:* if the
+box for Black artists sits higher than for other artists, their #1 songs
+tend to be more danceable. *How it helps:* this is the most direct
+visual test of our hypothesis and a strong indicator that `danceability`
+should help the classifier separate `is_black`.
 
 ```{r}
 billboard_test %>%
@@ -510,13 +510,13 @@ billboard_test %>%
   theme(legend.position = "none")
 ```
 
-**Acousticness density: male vs female artists.**
-*Why:* we examine another audio feature, `acousticness`, by gender using a
-density plot (better than a boxplot for seeing the full shape of the
-distribution). *What it shows:* the two overlaid curves reveal whether one
-gender's hits skew more acoustic or more electronic/produced; large
-overlap means little separation. *How it helps:* it tells us how much
-extra information `acousticness` adds on top of danceability for the
+**Acousticness density: male vs female artists.** *Why:* we examine
+another audio feature, `acousticness`, by gender using a density plot
+(better than a boxplot for seeing the full shape of the distribution).
+*What it shows:* the two overlaid curves reveal whether one gender's
+hits skew more acoustic or more electronic/produced; large overlap means
+little separation. *How it helps:* it tells us how much extra
+information `acousticness` adds on top of danceability for the
 classification task, guiding which audio features to keep in the models.
 
 ```{r}
@@ -537,6 +537,7 @@ billboard_test %>%
 ```
 
 # 3. Modeling
+
 ```{r include=FALSE}
 library(tidymodels)
 library(kknn)
@@ -558,32 +559,60 @@ cv_folds <- vfold_cv(train_data, v = 5, strata = is_black)
 
 ## 3.1 Research Question and Hypothesis
 
-Can we predict the demographic profile (gender and race) of a no.1 hit artist based on the song's audio features (danceability, acousticness, energy) and the year of release? If a song becomes a hit today, what kind of artist is most likely behind it?
+Can we predict the demographic profile (gender and race) of a no.1 hit
+artist based on the song's audio features (danceability, acousticness,
+energy) and the year of release? If a song becomes a hit today, what
+kind of artist is most likely behind it?
 
-Hypothesis: Based on our Exploratory Data Analysis, we hypothesize that highly danceable songs released in more recent decades are strongly associated with Black artists, due to the rise of R&B and Hip-Hop genres.
+Hypothesis: Based on our Exploratory Data Analysis, we hypothesize that
+highly danceable songs released in more recent decades are strongly
+associated with Black artists, due to the rise of R&B and Hip-Hop
+genres.
 
-**Choice of variables.** We frame this as a binary *classification* problem.
-The **dependent variable** is `is_black` ("yes"/"no"), derived from
-`artist_black`, because the EDA showed the clearest demographic trend for
-race over time. The **independent variables** are the song's audio
-features `danceability`, `energy` and `acousticness` plus the release year
-`year_num`. We picked these because the EDA plots suggested that (a) the
-share of Black artists grows with time and (b) danceability/acousticness
-differ across demographic groups — exactly the signals a model could
-exploit. We deliberately keep the predictor set small and interpretable
-rather than throwing in every column, which reduces the risk of
-overfitting and makes the logistic-regression coefficients easy to read.
+**Choice of variables.** We frame this as a binary *classification*
+problem. The **dependent variable** is `is_black` ("yes"/"no"), derived
+from `artist_black`, because the EDA showed the clearest demographic
+trend for race over time. The **independent variables** are the song's
+audio features `danceability`, `energy` and `acousticness` plus the
+release year `year_num`. We picked these because the EDA plots suggested
+that (a) the share of Black artists grows with time and (b)
+danceability/acousticness differ across demographic groups — exactly the
+signals a model could exploit. We deliberately keep the predictor set
+small and interpretable rather than throwing in every column, which
+reduces the risk of overfitting and makes the logistic-regression
+coefficients easy to read.
 
-**Why these two models.** We fit a **K-Nearest Neighbours (KNN)** classifier
-and a **logistic regression**. They are a good contrasting pair: KNN is a
-flexible, non-parametric method that can capture non-linear boundaries but
-is a "black box", while logistic regression is a simple, parametric model
-whose coefficients are directly interpretable. Comparing them lets us
-judge the trade-off between predictive flexibility and interpretability.
+**Why these two models.** We fit a **K-Nearest Neighbours (KNN)**
+classifier and a **logistic regression**. They are a good contrasting
+pair: KNN is a flexible, non-parametric method that can capture
+non-linear boundaries but is a "black box", while logistic regression is
+a simple, parametric model whose coefficients are directly
+interpretable. Comparing them lets us judge the trade-off between
+predictive flexibility and interpretability.
 
 Let's also remember about normalization for knn.
+
 ```{r}
-knn_recipe <- recipe(is_black ~ year_num + danceability + energy + acousticness, data = train_data) %>%
+knn_recipe <- recipe(
+  is_black ~
+    year_num +
+    danceability +
+    energy +
+    acousticness +
+    happiness +
+    bpm +
+    loudness_d_b +
+    front_person_age +
+    guitar_based +
+    piano_keyboard_based +
+    horns_winds +
+    saxophone +
+    trumpet +
+    instrumental +
+    explicit,
+  data = train_data
+) %>%
+  step_impute_median(all_numeric_predictors()) %>%
   step_normalize(all_numeric_predictors())
 ```
 
@@ -595,12 +624,12 @@ year/danceability/energy/acousticness) and assigns the majority class
 among them. Because distances are involved, we normalized all predictors
 in the recipe (`step_normalize`) so that one feature does not dominate
 just because of its scale. The number of neighbours *k* is a
-hyperparameter, which we tune with 5-fold cross-validation over a grid of
-candidate values.
+hyperparameter, which we tune with 5-fold cross-validation over a grid
+of candidate values.
 
-In the tuning plot below, each value of *k* is evaluated by `roc_auc` and
-`accuracy`. Very small *k* tends to overfit (noisy boundary, lower CV
-score), while very large *k* oversmooths. We read off the *k* that
+In the tuning plot below, each value of *k* is evaluated by `roc_auc`
+and `accuracy`. Very small *k* tends to overfit (noisy boundary, lower
+CV score), while very large *k* oversmooths. We read off the *k* that
 maximises ROC AUC and use it as the final model.
 
 ```{R}
@@ -622,10 +651,14 @@ knn_tuning <- tune_grid(
   metrics = metric_set(roc_auc, accuracy)
 )
 
+show_notes(knn_tuning)
+
 autoplot(knn_tuning) +
   labs(title = "KNN Tuning: Performance vs. Number of Neighbors (k)",
        subtitle = "Finding the optimal 'k' using 5-fold cross-validation") +
   theme_light()
+
+
 ```
 
 ```{R}
@@ -639,21 +672,21 @@ knn_metrics <- collect_metrics(knn_last_fit)
 knn_metrics
 ```
 
-**Interpreting the KNN result.** After selecting the best *k*, we refit on
-the full training set and evaluate **once** on the held-out test set
-(`last_fit`), which gives an honest estimate of out-of-sample performance.
-The table reports `accuracy` (share of correctly classified songs) and
-`roc_auc` (ability to rank a randomly chosen Black-artist song above a
-non-Black one, where 0.5 = random and 1.0 = perfect). We judge the model
-mainly by ROC AUC, since accuracy can be misleading when one class is more
-frequent than the other.
+**Interpreting the KNN result.** After selecting the best *k*, we refit
+on the full training set and evaluate **once** on the held-out test set
+(`last_fit`), which gives an honest estimate of out-of-sample
+performance. The table reports `accuracy` (share of correctly classified
+songs) and `roc_auc` (ability to rank a randomly chosen Black-artist
+song above a non-Black one, where 0.5 = random and 1.0 = perfect). We
+judge the model mainly by ROC AUC, since accuracy can be misleading when
+one class is more frequent than the other.
 
 ## 3.3 Logistic Regression
 
-**How logistic regression works.** Instead of voting among neighbours, the
-logistic regression models the **log-odds** that an artist is Black as a
-linear combination of the (normalized) predictors. We reuse the same
-recipe, so each coefficient describes the effect of a one-standard-
+**How logistic regression works.** Instead of voting among neighbours,
+the logistic regression models the **log-odds** that an artist is Black
+as a linear combination of the (normalized) predictors. We reuse the
+same recipe, so each coefficient describes the effect of a one-standard-
 deviation increase in that predictor, holding the others constant.
 
 ```{R}
@@ -666,30 +699,33 @@ fitted_log <- fit(log_wf, data = train_data)
 tidy(fitted_log)
 ```
 
-**Interpreting the coefficients.** In the `tidy()` table, the sign of each
-`estimate` shows the direction of the effect on the log-odds of being a
-Black artist, and `p.value` shows whether it is statistically significant
-(typically p < 0.05). Because the reference level of `is_black` is "yes",
-keep the factor coding in mind when reading the sign. A few concrete reads:
+**Interpreting the coefficients.** In the `tidy()` table, the sign of
+each `estimate` shows the direction of the effect on the log-odds of
+being a Black artist, and `p.value` shows whether it is statistically
+significant (typically p \< 0.05). Because the reference level of
+`is_black` is "yes", keep the factor coding in mind when reading the
+sign. A few concrete reads:
 
-- A **positive, significant** coefficient on `danceability` would mean that
-  more danceable #1 songs are associated with higher odds of a Black
-  artist — directly supporting our hypothesis.
-- The coefficient on `year_num` captures the time trend we saw in the EDA:
-  if it is significant, the demographic profile of #1 artists really did
-  shift over the decades even after accounting for the audio features.
-- To convert any coefficient to an **odds ratio**, exponentiate it
-  (`exp(estimate)`): values > 1 increase the odds, values < 1 decrease
-  them. Predictors with large p-values add little and could be dropped.
+-   A **positive, significant** coefficient on `danceability` would mean
+    that more danceable #1 songs are associated with higher odds of a
+    Black artist — directly supporting our hypothesis.
+-   The coefficient on `year_num` captures the time trend we saw in the
+    EDA: if it is significant, the demographic profile of #1 artists
+    really did shift over the decades even after accounting for the
+    audio features.
+-   To convert any coefficient to an **odds ratio**, exponentiate it
+    (`exp(estimate)`): values \> 1 increase the odds, values \< 1
+    decrease them. Predictors with large p-values add little and could
+    be dropped.
 
 ## 3.4 Model Evaluation and Comparison
 
-We evaluate both models on the same held-out test set and compare them on
-three fronts: how well they separate the classes (ROC AUC), how often they
-are right (accuracy), and how interpretable they are.
+We evaluate both models on the same held-out test set and compare them
+on three fronts: how well they separate the classes (ROC AUC), how often
+they are right (accuracy), and how interpretable they are.
 
-**Confusion matrix (KNN).** The heatmap below cross-tabulates predicted vs
-actual classes on the test data. The diagonal cells are correct
+**Confusion matrix (KNN).** The heatmap below cross-tabulates predicted
+vs actual classes on the test data. The diagonal cells are correct
 predictions; the off-diagonal cells are errors. It is especially useful
 for spotting *class imbalance* effects — for example, if the model
 predicts the majority class far more often, most errors will fall in one
@@ -702,11 +738,12 @@ conf_mat_obj <- conf_mat(knn_predictions, truth = is_black, estimate = .pred_cla
 autoplot(conf_mat_obj, type = "heatmap") +
   labs(title = "KNN Confusion Matrix (Test Data)")
 ```
-**ROC curve (KNN).** The ROC curve plots the true-positive rate against the
-false-positive rate across every probability threshold. A curve that bows
-toward the top-left corner is good; the diagonal line is random guessing.
-The area under it (AUC, shown in the subtitle) summarises this in one
-number.
+
+**ROC curve (KNN).** The ROC curve plots the true-positive rate against
+the false-positive rate across every probability threshold. A curve that
+bows toward the top-left corner is good; the diagonal line is random
+guessing. The area under it (AUC, shown in the subtitle) summarises this
+in one number.
 
 ```{R}
 roc_obj <- roc_curve(knn_predictions, truth = is_black, .pred_yes)
@@ -716,10 +753,10 @@ autoplot(roc_obj) +
   theme_light()
 ```
 
-**Head-to-head comparison.** Finally we overlay both ROC curves and put the
-metrics side by side in one table. The model whose curve sits higher and
-whose ROC AUC is larger is the better *ranker*; accuracy tells us about
-hard 0/1 decisions at the default threshold.
+**Head-to-head comparison.** Finally we overlay both ROC curves and put
+the metrics side by side in one table. The model whose curve sits higher
+and whose ROC AUC is larger is the better *ranker*; accuracy tells us
+about hard 0/1 decisions at the default threshold.
 
 ```{r}
 knn_preds <- collect_predictions(knn_last_fit) %>% mutate(model = "KNN")
@@ -746,34 +783,33 @@ bind_rows(knn_metrics, log_metrics) %>%
   select(model, .metric, .estimate) %>%
   filter(.metric %in% c("accuracy", "roc_auc")) %>%
   pivot_wider(names_from = .metric, values_from = .estimate) %>%
-  rename(Model = model, Accuracy = accuracy, `ROC AUC` = roc_auc) %>%
-  knitr::kable(digits = 3, caption = "Performance Metrics on Test Data")
+  rename(Model = model, Accuracy = accuracy, `ROC AUC` = roc_auc)
 ```
 
-**Which model to prefer?** We weigh the two models on the criteria from the
-brief:
+**Which model to prefer?** We weigh the two models on the criteria from
+the brief:
 
-- *Goodness of fit / prediction quality:* compare the ROC AUC and accuracy
-  in the table. If the two models are close (which is common when the
-  signal is moderate and the predictors are few), the simpler model is
-  preferable. If KNN's ROC AUC is clearly higher, it is capturing a
-  non-linear boundary that logistic regression cannot.
-- *Statistical significance:* only logistic regression gives per-predictor
-  p-values, so it tells us *which* features matter and in which direction;
-  KNN gives no such inference.
-- *Interpretability:* logistic regression wins decisively — its
-  coefficients/odds ratios explain the relationship, whereas KNN is a
-  black box that only outputs a prediction.
-- *Practical usefulness:* if the goal is *understanding* what kind of
-  artist is behind a hit, logistic regression is the better tool; if the
-  goal is *raw predictive accuracy* and KNN scores higher, KNN is the
-  choice.
+-   *Goodness of fit / prediction quality:* compare the ROC AUC and
+    accuracy in the table. If the two models are close (which is common
+    when the signal is moderate and the predictors are few), the simpler
+    model is preferable. If KNN's ROC AUC is clearly higher, it is
+    capturing a non-linear boundary that logistic regression cannot.
+-   *Statistical significance:* only logistic regression gives
+    per-predictor p-values, so it tells us *which* features matter and
+    in which direction; KNN gives no such inference.
+-   *Interpretability:* logistic regression wins decisively — its
+    coefficients/odds ratios explain the relationship, whereas KNN is a
+    black box that only outputs a prediction.
+-   *Practical usefulness:* if the goal is *understanding* what kind of
+    artist is behind a hit, logistic regression is the better tool; if
+    the goal is *raw predictive accuracy* and KNN scores higher, KNN is
+    the choice.
 
-Overall, unless KNN shows a clearly higher AUC, we lean toward **logistic
-regression** as the primary model because it answers the research question
-(which factors matter) and not just "what is the prediction". The final
-verdict should be read off the metrics table and the coefficient
-significance produced above.
+Overall, unless KNN shows a clearly higher AUC, we lean toward
+**logistic regression** as the primary model because it answers the
+research question (which factors matter) and not just "what is the
+prediction". The final verdict should be read off the metrics table and
+the coefficient significance produced above.
 
 # 4. Summary and Reflection
 
@@ -782,85 +818,89 @@ significance produced above.
 **What we did.** We analysed the "Billboard Hot 100 Number Ones" dataset
 from TidyTuesday (2025-08-26). The work went through four stages:
 
-1. **Data cleaning** — we standardised column names with `janitor`,
-   dropped lyrics/text columns we did not need, trimmed whitespace, parsed
-   the `date` column with `lubridate`, removed rows with missing
-   `artist`/`song`/`date`, and de-duplicated the data.
-2. **Feature engineering** — we created **10 new columns**: `decade`,
-   `year`, `is_collab`, `artist_count`, `song_title_length`, `season`,
-   `is_solo`, `month`, `artist_name_length` and `title_word_count`. These
-   recoded, grouped and derived variables made the later analysis possible.
-3. **EDA** — we produced **15 visualisations** plus descriptive statistics,
-   each with a short why/what/how explanation.
-4. **Modeling** — we built and compared two classifiers (KNN and logistic
-   regression) predicting whether a #1 artist is Black from the song's
-   audio features and release year.
+1.  **Data cleaning** — we standardised column names with `janitor`,
+    dropped lyrics/text columns we did not need, trimmed whitespace,
+    parsed the `date` column with `lubridate`, removed rows with missing
+    `artist`/`song`/`date`, and de-duplicated the data.
+2.  **Feature engineering** — we created **10 new columns**: `decade`,
+    `year`, `is_collab`, `artist_count`, `song_title_length`, `season`,
+    `is_solo`, `month`, `artist_name_length` and `title_word_count`.
+    These recoded, grouped and derived variables made the later analysis
+    possible.
+3.  **EDA** — we produced **15 visualisations** plus descriptive
+    statistics, each with a short why/what/how explanation.
+4.  **Modeling** — we built and compared two classifiers (KNN and
+    logistic regression) predicting whether a #1 artist is Black from
+    the song's audio features and release year.
 
 **Most important findings.**
 
-- **Time, not season, drives the chart.** The number of distinct #1 hits
-  was far higher in the 1960s–1980s and dropped sharply afterwards, which
-  means modern hits stay at the top much longer. Season of release, by
-  contrast, has essentially no effect.
-- **Collaborations are on the rise.** The share of #1 songs that are
-  collaborations grows clearly toward recent years, even though solo
-  artists still dominate the dataset overall.
-- **Song titles are short and stable.** Title length (in both characters
-  and words) is right-skewed and barely changes across decades.
-- **The demographic profile of #1 artists shifted.** The share of #1 hits
-  by Black artists rises across the decades, and the EDA suggested audio
-  features such as danceability differ across demographic groups — the
-  signal our models then tried to exploit.
-- **Modeling answer.** Both models could separate the classes to some
-  degree (see the ROC AUC table). Logistic regression and KNN performed
-  comparably, but logistic regression additionally told us *which*
-  predictors matter and in which direction, partially supporting the
-  hypothesis that danceability and recency are linked to Black artists.
+-   **Time, not season, drives the chart.** The number of distinct #1
+    hits was far higher in the 1960s–1980s and dropped sharply
+    afterwards, which means modern hits stay at the top much longer.
+    Season of release, by contrast, has essentially no effect.
+-   **Collaborations are on the rise.** The share of #1 songs that are
+    collaborations grows clearly toward recent years, even though solo
+    artists still dominate the dataset overall.
+-   **Song titles are short and stable.** Title length (in both
+    characters and words) is right-skewed and barely changes across
+    decades.
+-   **The demographic profile of #1 artists shifted.** The share of #1
+    hits by Black artists rises across the decades, and the EDA
+    suggested audio features such as danceability differ across
+    demographic groups — the signal our models then tried to exploit.
+-   **Modeling answer.** Both models could separate the classes to some
+    degree (see the ROC AUC table). Logistic regression and KNN
+    performed comparably, but logistic regression additionally told us
+    *which* predictors matter and in which direction, partially
+    supporting the hypothesis that danceability and recency are linked
+    to Black artists.
 
 ## 4.2 Limitations
 
-- **Class imbalance.** `is_black` is not balanced, so accuracy alone is
-  misleading; we relied on ROC AUC and the confusion matrix, but a more
-  imbalance-aware metric (e.g. balanced accuracy, F1, or resampling) would
-  be better.
-- **Missing and coarse demographic data.** Variables such as `artist_black`
-  and `artist_male` are simplified dummies (with categories like "mixed")
-  and contain missing values, which forces us to drop rows and lose
-  nuance. Encoding people into binary categories is itself a strong
-  simplification.
-- **Limited predictors.** We used only four predictors. Genre, tempo,
-  loudness or label information could carry additional signal that our
-  models cannot see.
-- **Counts depend on coverage.** Per-decade counts partly reflect how the
-  chart and the dataset cover each era, not only musical reality.
-- **Correlation, not causation.** Any association we found (e.g. between
-  danceability and demographics) is descriptive; the models do not prove
-  any causal mechanism.
+-   **Class imbalance.** `is_black` is not balanced, so accuracy alone
+    is misleading; we relied on ROC AUC and the confusion matrix, but a
+    more imbalance-aware metric (e.g. balanced accuracy, F1, or
+    resampling) would be better.
+-   **Missing and coarse demographic data.** Variables such as
+    `artist_black` and `artist_male` are simplified dummies (with
+    categories like "mixed") and contain missing values, which forces us
+    to drop rows and lose nuance. Encoding people into binary categories
+    is itself a strong simplification.
+-   **Limited predictors.** We used only four predictors. Genre, tempo,
+    loudness or label information could carry additional signal that our
+    models cannot see.
+-   **Counts depend on coverage.** Per-decade counts partly reflect how
+    the chart and the dataset cover each era, not only musical reality.
+-   **Correlation, not causation.** Any association we found (e.g.
+    between danceability and demographics) is descriptive; the models do
+    not prove any causal mechanism.
 
 ## 4.3 Reflection
 
 **What was the most difficult part?** The modeling stage — in particular
 setting up a clean `tidymodels` workflow (recipe, normalization,
-cross-validated tuning of *k*, and a fair `last_fit` comparison) and then
-interpreting the results honestly given the class imbalance.
+cross-validated tuning of *k*, and a fair `last_fit` comparison) and
+then interpreting the results honestly given the class imbalance.
 
-**What was the most interesting part?** Seeing the EDA hypotheses confirmed
-by the data: that the demographic profile of #1 artists genuinely shifted
-over time, and that audio features carry enough signal for a model to pick
-up on it. Turning a vague intuition ("music changed") into measurable
-trends was rewarding.
+**What was the most interesting part?** Seeing the EDA hypotheses
+confirmed by the data: that the demographic profile of #1 artists
+genuinely shifted over time, and that audio features carry enough signal
+for a model to pick up on it. Turning a vague intuition ("music
+changed") into measurable trends was rewarding.
 
 **What would we do differently if we started again?** We would decide on
-the research question *before* the EDA, so that the feature engineering and
-charts are designed around the modeling goal from the start, rather than
-exploring broadly and narrowing down later. We would also fix the
-descriptive-statistics code earlier (the `sum`/`count` issues) instead of
-at the end.
+the research question *before* the EDA, so that the feature engineering
+and charts are designed around the modeling goal from the start, rather
+than exploring broadly and narrowing down later. We would also fix the
+descriptive-statistics code earlier (the `sum`/`count` issues) instead
+of at the end.
 
-**What would we improve with more time, knowledge or resources?** With more
-**time**, we would handle class imbalance properly (resampling, threshold
-tuning) and add more models (e.g. random forest) for a richer comparison.
-With more **knowledge**, we would engineer better audio/genre features and
-use more rigorous model diagnostics. With more **resources**, we would join
-external data (streaming numbers, genre tags, chart longevity) to predict
-something more actionable, such as how long a song stays at #1.
+**What would we improve with more time, knowledge or resources?** With
+more **time**, we would handle class imbalance properly (resampling,
+threshold tuning) and add more models (e.g. random forest) for a richer
+comparison. With more **knowledge**, we would engineer better
+audio/genre features and use more rigorous model diagnostics. With more
+**resources**, we would join external data (streaming numbers, genre
+tags, chart longevity) to predict something more actionable, such as how
+long a song stays at #1.
